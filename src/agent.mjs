@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { fetchTcodePrice } from "./price.mjs";
 import { tcodeSettlement } from "./settlement.mjs";
 
 const SUPPORTED = ["base", "solana", "eip155:8453", "solana:mainnet"];
@@ -16,7 +17,7 @@ export async function quote({ url, maxUsd = 0.05, amountUsd, network }) {
   let status = 402;
   let payment = null;
   if (url) {
-    const response = await fetch(url, { headers: { "user-agent": "talocode-payagent/0.1" } });
+    const response = await fetch(url, { headers: { "user-agent": "talocode-payagent/0.2" } });
     status = response.status;
     const paymentHeader = response.headers.get("payment-required") || response.headers.get("x-payment-required");
     if (paymentHeader) {
@@ -26,6 +27,10 @@ export async function quote({ url, maxUsd = 0.05, amountUsd, network }) {
   const price = Number(amountUsd || payment?.maxAmountRequired || payment?.amountUsd || payment?.price || NaN);
   const chain = network || payment?.network || payment?.acceptedNetworks?.[0] || "solana";
   const decision = status === 402 || Number.isFinite(price) ? decide({ amountUsd: price, network: chain, maxUsd }) : { decision: "no_payment", reason: "server did not require payment" };
+  let priceUsd = null;
+  if (Number.isFinite(price)) {
+    try { priceUsd = (await fetchTcodePrice()).priceUsd; } catch { priceUsd = null; }
+  }
   return {
     id: `pay_${randomUUID()}`,
     product: "@talocode/payagent",
@@ -34,7 +39,8 @@ export async function quote({ url, maxUsd = 0.05, amountUsd, network }) {
     maxUsd,
     payment,
     ...decision,
-    settlement: Number.isFinite(price) ? tcodeSettlement({ amountUsd: price }) : null,
+    settlement: Number.isFinite(price) ? tcodeSettlement({ amountUsd: price, priceUsd }) : null,
     signed: false,
+    sent: false,
   };
 }

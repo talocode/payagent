@@ -1,11 +1,18 @@
 {
   "name": "@talocode/payagent",
-  "version": "0.1.0",
-  "description": "MCP agent that reads an HTTP 402 payment request, enforces a spend cap, and writes a receipt. It does not launch tokens or sign payments by itself.",
+  "version": "0.2.0",
+  "description": "MCP agent that reads an HTTP 402 payment request, enforces a spend cap, and prepares an unsigned official $TCODE fee transfer. It does not hold a key, sign, or send.",
   "type": "module",
   "bin": { "talocode-payagent": "./bin/payagent.mjs" },
   "exports": { ".": "./src/sdk.mjs" },
   "license": "MIT",
   "engines": { "node": ">=18" },
-  "publishConfig": { "access": "public" }
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
 }
